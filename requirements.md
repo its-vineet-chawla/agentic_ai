@@ -179,14 +179,16 @@ The first usable release must:
 
 ## 11. Decisions to Resolve Before MVP 1
 
-- Which GitHub MCP server/implementation will be used, and does it support reading and writing GitHub wiki pages for the target repositories?
-- Is the wiki hosted as a GitHub wiki, or is another documentation surface intended?
-- Which Google model and Python SDK/integration are approved, and what are the expected quotas/cost constraints?
+- **Initial interface and run target:** Local command-line application during development.
+- **GitHub MCP recommendation:** Start with GitHub's official MCP server for repository, issue, pull request, and Projects access, initially restricted to read-only tools. The server is not yet configured; verify authentication and target-repository permissions before implementation.
+- **Wiki integration:** Deferred beyond the initial GitHub analysis workflow. The official server's documented toolsets do not include Wiki operations; revisit a separate Git-backed wiki adapter when wiki publishing enters scope. No wiki writes in the initial workflow.
+- **Google model recommendation:** Start evaluation with `gemini-3.5-flash-lite` as the cost-conscious baseline. Compare quality on the project evaluation set and consider `gemini-3.8-flash` if analysis quality or agent behavior is insufficient. Exact model availability and cost must be confirmed when implementation begins.
+- **Sprint scope:** Deferred. The initial analysis workflow will not claim sprint membership; define how GitHub Projects iterations and milestones interact before adding sprint summaries.
 - Which LangChain components are needed, and does the workflow require LangGraph state/checkpointing?
 - Which guardrails and evaluation tools will be used, and what initial pass thresholds define acceptable grounding and safety?
-- Where will the application run, and what secret manager/configuration mechanism is available?
+- What secret manager/configuration mechanism will be used outside local development?
 - What are the user identity, authorization, repository allowlist, approval, and audit-retention requirements?
-- What is the definition of a sprint (dates, issue labels/milestones, project board, or another source), and what formats/templates should generated pages follow?
+- What formats/templates should generated pages follow when wiki integration is added?
 - Should memory use embeddings/vector search, and what content/metadata may be retained?
 - What are the expected repository count, usage volume, latency target, and budget?
 
