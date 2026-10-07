@@ -108,11 +108,11 @@ This document describes requirements and a proposed delivery sequence. It does n
 ## 8. Proposed Technical Direction
 
 - **Language:** Python.
-- **Agent framework:** LangChain ecosystem; confirm whether LangGraph is needed for stateful, multi-step orchestration before selecting the orchestration design.
+- **Agent framework:** LangGraph Graph API, using explicit state and nodes for the repository-status and documentation-draft workflows. Add agent/tool loops only when a workflow requires them.
 - **Model access:** Google AI Studio API key and a supported Google model integration.
 - **GitHub access:** GitHub MCP server, with capabilities and permissions verified before implementation.
-- **Persistent storage:** PostgreSQL; decide on a migration tool and any vector-search extension during design.
-- **Guardrails/evaluations:** Select compatible libraries and define initial datasets/thresholds during the foundational MVP.
+- **Persistent storage:** PostgreSQL through SQLAlchemy 2 async sessions, with Alembic migrations. Begin with exact-scope relational memory retrieval; add vector search only if evaluations show it is needed.
+- **Guardrails/evaluations:** Use Pydantic validation and read-only/scope controls for runtime guardrails; use pytest plus a versioned deterministic offline evaluation dataset for the first regression gate. The initial thresholds are provisional and must be ratified before release. Consider hosted/model-judge evaluation only after data handling, cost, and operational requirements are approved.
 - **Testing:** Unit, integration, and workflow tests, with evaluation fixtures kept versioned and free of secrets.
 
 These choices are requirements or initial direction, not a final dependency lock. Versions and exact packages should be selected and documented in the setup MVP.
@@ -181,15 +181,15 @@ The first usable release must:
 
 - **Initial interface and run target:** Local command-line application during development.
 - **GitHub MCP recommendation:** Start with GitHub's official MCP server for repository, issue, pull request, and Projects access, initially restricted to read-only tools. The server is not yet configured; verify authentication and target-repository permissions before implementation.
-- **Wiki integration:** Deferred beyond the initial GitHub analysis workflow. The official server's documented toolsets do not include Wiki operations; revisit a separate Git-backed wiki adapter when wiki publishing enters scope. No wiki writes in the initial workflow.
-- **Google model recommendation:** Start evaluation with `gemini-3.5-flash-lite` as the cost-conscious baseline. Compare quality on the project evaluation set and consider `gemini-3.8-flash` if analysis quality or agent behavior is insufficient. Exact model availability and cost must be confirmed when implementation begins.
+- **Wiki integration:** The official server's documented toolsets do not include Wiki operations. The application has a fail-closed, approval-gated publisher boundary, but no concrete wiki writer is enabled. Select and verify a separate Git-backed wiki adapter, permissions, page-version checks, and atomic create/update behavior before enabling writes.
+- **Google model recommendation:** Use the current `gemini-3.8-flash` model as the configurable initial integration default. Compare quality and cost against `gemini-3.5-flash-lite` using the project evaluation set before release; confirm model availability and pricing in Google AI Studio.
 - **Sprint scope:** Deferred. The initial analysis workflow will not claim sprint membership; define how GitHub Projects iterations and milestones interact before adding sprint summaries.
-- Which LangChain components are needed, and does the workflow require LangGraph state/checkpointing?
+- Whether any later workflow requires persistent graph checkpoints or conditional agent/tool loops; the current workflows are linear and do not enable checkpointing.
 - Which guardrails and evaluation tools will be used, and what initial pass thresholds define acceptable grounding and safety?
 - What secret manager/configuration mechanism will be used outside local development?
 - What are the user identity, authorization, repository allowlist, approval, and audit-retention requirements?
 - What formats/templates should generated pages follow when wiki integration is added?
-- Should memory use embeddings/vector search, and what content/metadata may be retained?
+- The development memory-retention default is 90 days and is configurable with `MEMORY_RETENTION_DAYS`; an administrator must approve the production retention period and deletion policy. Should memory use embeddings/vector search, and what content/metadata may be retained?
 - What are the expected repository count, usage volume, latency target, and budget?
 
 ## 12. Terminology

@@ -3,7 +3,14 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from agentic_ai.models import AnalysisResult, GitHubIssue, GitHubPullRequest, SourceReference
+from agentic_ai.models import (
+    AnalysisResult,
+    GitHubIssue,
+    GitHubPullRequest,
+    GitHubRepository,
+    ProposedWikiChange,
+    SourceReference,
+)
 
 
 def work_item_data(**overrides):
@@ -40,6 +47,18 @@ def test_github_pull_request_accepts_merged_state():
     assert pull_request.is_draft is False
 
 
+def test_github_repository_accepts_valid_metadata():
+    repository = GitHubRepository(
+        full_name="octo/project",
+        description="Project repository",
+        url="https://github.com/octo/project",
+        default_branch="main",
+    )
+
+    assert repository.full_name == "octo/project"
+    assert repository.default_branch == "main"
+
+
 def test_analysis_result_requires_source_references():
     with pytest.raises(ValidationError):
         AnalysisResult(summary="Recent project changes", sources=[])
@@ -53,7 +72,61 @@ def test_analysis_result_defaults_timestamp_and_accepts_source():
         url="https://github.com/octo/project/pull/42",
     )
 
-    result = AnalysisResult(summary="Search performance improved.", sources=[source])
+    result = AnalysisResult(
+        summary="Search performance improved.",
+        sources=[source],
+        summary_sources=[source],
+    )
 
     assert result.sources == [source]
+    assert result.summary_sources == [source]
     assert result.created_at.tzinfo is timezone.utc
+
+
+def test_analysis_result_requires_finding_citation_alignment():
+    source = SourceReference(
+        kind="issue",
+        identifier="42",
+        title="Search is slow",
+        url="https://github.com/octo/project/issues/42",
+    )
+
+    with pytest.raises(ValidationError):
+        AnalysisResult(
+            summary="Search needs work.",
+            findings=["Search is slow."],
+            sources=[source],
+            summary_sources=[source],
+            finding_sources=[],
+        )
+
+
+def test_proposed_wiki_change_requires_source_and_accepts_update():
+    source = SourceReference(
+        kind="pull_request",
+        identifier="42",
+        title="Improve search",
+        url="https://github.com/octo/project/pull/42",
+    )
+
+    change = ProposedWikiChange(
+        operation="update",
+        repository="octo/project",
+        target_page="Project-status",
+        content="Search performance improved.",
+        sources=[source],
+    )
+
+    assert change.operation == "update"
+    assert change.sources == [source]
+
+
+def test_proposed_wiki_change_rejects_missing_sources():
+    with pytest.raises(ValidationError):
+        ProposedWikiChange(
+            operation="create",
+            repository="octo/project",
+            target_page="Release-notes",
+            content="Initial draft",
+            sources=[],
+        )
